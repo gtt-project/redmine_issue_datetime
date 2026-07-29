@@ -1,0 +1,8 @@
+en:
+  field_start_time: Start time
+  field_due_time: Due time
+  label_issue_datetime_trackers: Enabled for trackers
+  label_issue_datetime_step: Time input step
+  label_issue_datetime_zone: Reference time zone
+  label_issue_datetime_zone_default: Application default
+  text_issue_datetime_zone_hint: Used to derive the date part mirrored into the start and due date fields.

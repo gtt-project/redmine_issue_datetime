@@ -12,8 +12,10 @@ Gantt, exports, and the REST API keep working exactly as before.
 
 ## Status
 
-Design phase. See [docs/design.md](docs/design.md) for the full design
-document. No installable release yet.
+Early development, no release yet. The core pieces (sidecar storage,
+date mirroring, issue form integration, JSON API) are implemented and
+covered by tests. See [docs/design.md](docs/design.md) for the full
+design document.
 
 ## Planned highlights
 
