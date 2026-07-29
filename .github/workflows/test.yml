@@ -1,0 +1,122 @@
+name: Test
+
+# Public repository, so Actions minutes are free: run on PRs and on the
+# post-merge push to main. workflow_dispatch lets the check be run on demand.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PLUGIN_NAME: redmine_issue_datetime
+
+jobs:
+  test:
+    name: redmine:${{ matrix.redmine_version }} ruby:${{ matrix.ruby_version }}
+    runs-on: ubuntu-latest
+    # Cap runaway steps (stalled bundle install or DB wait) well under GitHub's
+    # 6-hour default so a hang cannot hold the concurrency group.
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Redmine 6.1 supports Ruby up to 3.4; 7.0 adds Ruby 4.0, so both Ruby
+        # lines are covered on 7.0.
+        include:
+          - { redmine_version: 6.1-stable, ruby_version: "3.4" }
+          - { redmine_version: 7.0-stable, ruby_version: "3.4" }
+          - { redmine_version: 7.0-stable, ruby_version: "4.0" }
+
+    # Plain PostgreSQL: this plugin has no geometry dependency, so it needs
+    # neither PostGIS nor redmine_gtt.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout Redmine
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: redmine/redmine
+          ref: ${{ matrix.redmine_version }}
+          path: redmine
+          persist-credentials: false
+
+      - name: Checkout plugin
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: redmine/plugins/${{ env.PLUGIN_NAME }}
+          persist-credentials: false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1.316.0
+        with:
+          ruby-version: ${{ matrix.ruby_version }}
+
+      - name: Install native gem system libraries
+        run: |
+          sudo apt-get update --yes --quiet
+          sudo apt-get install --yes --quiet --no-install-recommends libpq-dev
+
+      - name: Prepare Redmine source
+        working-directory: redmine
+        run: |
+          cat <<EOF > config/database.yml
+            test:
+              adapter: postgresql
+              database: redmine
+              host: 127.0.0.1
+              username: postgres
+              password: postgres
+              encoding: utf8
+          EOF
+
+      - name: Install Ruby dependencies
+        working-directory: redmine
+        run: |
+          bundle config set --local without 'development'
+          bundle install --jobs=4 --retry=3
+
+      - name: Run Redmine rake tasks
+        env:
+          RAILS_ENV: test
+        working-directory: redmine
+        run: |
+          bundle exec rake generate_secret_token
+          bundle exec rake db:create db:migrate redmine:plugins:migrate
+
+      - name: Run tests
+        env:
+          RAILS_ENV: test
+        working-directory: redmine
+        run: |
+          bundle exec rails test \
+            plugins/${{ env.PLUGIN_NAME }}/test/unit \
+            plugins/${{ env.PLUGIN_NAME }}/test/functional \
+            plugins/${{ env.PLUGIN_NAME }}/test/integration
+
+      # Eager-load gate. Test and development environments load lazily, so a
+      # constant this plugin never references at boot can still break a
+      # production instance (which eager-loads) with a NameError. This task
+      # eager-loads everything and fails on exactly that class of mismatch.
+      - name: Check eager loading
+        env:
+          RAILS_ENV: test
+        working-directory: redmine
+        run: bundle exec rake zeitwerk:check
