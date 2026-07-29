@@ -1,10 +1,11 @@
 name: Test
 
-# PRs only, not also the post-merge push, to conserve Actions minutes while this
-# repository is private. Add `push: branches: [main]` once it is public, where
-# Actions is free. workflow_dispatch lets the check be run on demand.
+# Public repository, so Actions minutes are free: run on PRs and on the
+# post-merge push to main. workflow_dispatch lets the check be run on demand.
 on:
   pull_request:
+    branches: [main]
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -29,8 +30,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Redmine 6.1 supports Ruby up to 3.4; 7.0 adds Ruby 4.0, which is what
-        # the Georeport image runs, so both Ruby lines are covered on 7.0.
+        # Redmine 6.1 supports Ruby up to 3.4; 7.0 adds Ruby 4.0, so both Ruby
+        # lines are covered on 7.0.
         include:
           - { redmine_version: 6.1-stable, ruby_version: "3.4" }
           - { redmine_version: 7.0-stable, ruby_version: "3.4" }
