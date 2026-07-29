@@ -119,8 +119,8 @@ stays date-only. Parents do not aggregate times in v1.
 
 ## 7. API
 
-Plugin-namespaced REST endpoints (JSON), not injected into the core issue
-representation:
+REST endpoints owned by the plugin (declared in the plugin's own routes,
+JSON only) and not injected into the core issue representation:
 
 ```
 GET    /issues/:issue_id/datetime.json
@@ -144,7 +144,7 @@ GET /projects/:id/issue_datetimes.json?updated_since=...
 | Core Gantt / calendar | Unchanged, day granularity as before |
 | Filters ("due this week" etc.) | Unchanged, operate on core date columns |
 | REST API for issues | Unchanged payloads, no client breakage |
-| Reminders (`send_reminders`) | Unchanged, date based |
+| Reminders (`send_reminders`) | Unchanged, date-based |
 | Other plugins reading dates | Unchanged, they see dates as before |
 | Plugin uninstall | Drop one table, core data intact |
 | Upstream #5458 ever landing | One-time script migrates sidecar values into core columns |
