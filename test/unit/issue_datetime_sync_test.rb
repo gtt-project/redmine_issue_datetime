@@ -95,6 +95,41 @@ class IssueDatetimeSyncTest < ActiveSupport::TestCase
     assert_equal Time.utc(2026, 8, 3, 9, 15), @issue.reload.issue_datetime.starts_at
   end
 
+  test 'times are snapped to the configured interval' do
+    @issue.start_date = Date.new(2026, 8, 3)
+    @issue.start_time = '09:07'
+    assert @issue.save
+
+    assert_equal Time.utc(2026, 8, 3, 9, 0), @issue.reload.issue_datetime.starts_at
+  end
+
+  test 'snapping rounds to the nearest slot, not down' do
+    @issue.start_date = Date.new(2026, 8, 3)
+    @issue.start_time = '09:23'
+    assert @issue.save
+
+    assert_equal Time.utc(2026, 8, 3, 9, 30), @issue.reload.issue_datetime.starts_at
+  end
+
+  test 'snapping near midnight clamps instead of rolling into the next day' do
+    @issue.start_date = Date.new(2026, 8, 3)
+    @issue.start_time = '23:58'
+    assert @issue.save
+
+    record = @issue.reload.issue_datetime
+    assert_equal Time.utc(2026, 8, 3, 23, 45), record.starts_at
+    assert_equal Date.new(2026, 8, 3), @issue.start_date
+  end
+
+  test 'a coarser configured step snaps accordingly' do
+    enable_issue_datetime(@issue.tracker_id, step: '60')
+    @issue.start_date = Date.new(2026, 8, 3)
+    @issue.start_time = '09:40'
+    assert @issue.save
+
+    assert_equal Time.utc(2026, 8, 3, 10, 0), @issue.reload.issue_datetime.starts_at
+  end
+
   test 'due time before start time on the same date blocks the save' do
     @issue.start_date = Date.new(2026, 8, 3)
     @issue.due_date = Date.new(2026, 8, 3)

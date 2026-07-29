@@ -57,7 +57,7 @@ module RedmineIssueDatetime
     match = submitted && TIME_OF_DAY.match(submitted)
     hour, minute =
       if match
-        [match[1].to_i, match[2].to_i]
+        snap_to_step((match[1].to_i * 60) + match[2].to_i).divmod(60)
       elsif previous
         prev = previous.in_time_zone(reference_zone)
         [prev.hour, prev.min]
@@ -65,5 +65,19 @@ module RedmineIssueDatetime
     return nil if hour.nil?
 
     reference_zone.local(date.year, date.month, date.day, hour, minute)
+  end
+
+  # Rounds minutes-since-midnight to the nearest configured interval, so a
+  # value typed past the widget (or sent to the API) still lands on the grid
+  # the scheduler and the picker use. Clamped so rounding up from the last
+  # slot cannot roll over into the next day, which the date field could not
+  # express.
+  def self.snap_to_step(minutes)
+    step = time_step_minutes
+    return minutes if step <= 1
+
+    snapped = (minutes.to_f / step).round * step
+    last = ((23 * 60) + 59) / step * step
+    snapped > last ? last : snapped
   end
 end
