@@ -1,4 +1,4 @@
-<% record = issue && issue.issue_datetime %>
+<% record = issue && RedmineIssueDatetime.enabled_for?(issue.tracker_id) ? issue.issue_datetime : nil %>
 <% if record && !record.blank_times? %>
 <div class="issue-datetime">
   <span class="issue-datetime-start">

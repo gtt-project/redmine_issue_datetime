@@ -76,13 +76,13 @@ class IssueDatetimesController < ApplicationController
 
   def find_issue
     @issue = Issue.find(params[:issue_id])
-    render_403 unless @issue.visible?
+    return render_403 unless @issue.visible?
   rescue ActiveRecord::RecordNotFound
     render_404
   end
 
   def require_edit_permission
-    render_403 unless @issue.editable?
+    return render_403 unless @issue.editable?
   end
 
   def find_project
@@ -91,8 +91,13 @@ class IssueDatetimesController < ApplicationController
     render_404
   end
 
+  # Requires an explicit offset (Z or +hh:mm) so API writes are
+  # unambiguous regardless of the server's local time zone.
   def parse_timestamp(value)
-    Time.iso8601(value.to_s)
+    text = value.to_s
+    return nil unless /(Z|[+-]\d{2}:?\d{2})\z/i.match?(text)
+
+    Time.iso8601(text)
   rescue ArgumentError
     nil
   end

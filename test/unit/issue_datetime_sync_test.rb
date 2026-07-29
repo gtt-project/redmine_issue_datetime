@@ -95,6 +95,17 @@ class IssueDatetimeSyncTest < ActiveSupport::TestCase
     assert_equal Time.utc(2026, 8, 3, 9, 15), @issue.reload.issue_datetime.starts_at
   end
 
+  test 'due time before start time on the same date blocks the save' do
+    @issue.start_date = Date.new(2026, 8, 3)
+    @issue.due_date = Date.new(2026, 8, 3)
+    @issue.start_time = '10:00'
+    @issue.due_time = '09:00'
+
+    assert_not @issue.save
+    assert @issue.errors[:due_date].present?
+    assert_nil @issue.reload.issue_datetime
+  end
+
   test 'destroying the issue destroys the sidecar row' do
     @issue.update!(start_date: Date.new(2026, 8, 3), start_time: '09:15')
     record_id = @issue.reload.issue_datetime.id

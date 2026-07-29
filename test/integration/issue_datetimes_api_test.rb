@@ -49,6 +49,14 @@ class IssueDatetimesApiTest < Redmine::ApiTest::Base
     assert_equal Time.utc(2026, 8, 3, 17, 0), @issue.issue_datetime.ends_at
   end
 
+  test 'PUT rejects timestamps without an explicit offset' do
+    put "/issues/#{@issue.id}/datetime.json",
+        params: {starts_at: '2026-08-03T09:15:00'}.to_json,
+        headers: {'Content-Type' => 'application/json'}.merge(credentials('jsmith'))
+
+    assert_response :unprocessable_entity
+  end
+
   test 'PUT rejects malformed timestamps' do
     put "/issues/#{@issue.id}/datetime.json",
         params: {starts_at: 'tomorrow-ish'}.to_json,

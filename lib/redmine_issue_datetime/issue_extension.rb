@@ -41,14 +41,21 @@ module RedmineIssueDatetime
       return true unless RedmineIssueDatetime.enabled_for?(tracker_id)
 
       record = issue_datetime
+      return true if record.nil? && @start_time_input.blank? && @due_time_input.blank?
+
       touched = !@start_time_input.nil? || !@due_time_input.nil? ||
                 will_save_change_to_start_date? || will_save_change_to_due_date?
-      return true unless touched || record
+      return true unless touched
 
       old_starts = record&.starts_at
       old_ends = record&.ends_at
       new_starts = RedmineIssueDatetime.combine(start_date, @start_time_input, old_starts)
       new_ends = RedmineIssueDatetime.combine(due_date, @due_time_input, old_ends)
+
+      if new_starts && new_ends && new_ends < new_starts
+        errors.add(:due_date, :greater_than_start_date)
+        throw :abort
+      end
 
       journalize_issue_datetime('start_time', old_starts, new_starts)
       journalize_issue_datetime('due_time', old_ends, new_ends)
@@ -70,7 +77,7 @@ module RedmineIssueDatetime
         record.destroy unless record.new_record?
         association(:issue_datetime).reset
       elsif record.changed?
-        record.save
+        record.save!
       end
     end
 
