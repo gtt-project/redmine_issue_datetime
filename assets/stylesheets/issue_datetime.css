@@ -1,0 +1,15 @@
+/* Hide the detached fields until issue_datetime.js has placed them, so they
+   do not flash at the bottom of the form on load. */
+#issue-datetime-fields.issue-datetime-pending {
+  display: none;
+}
+
+/* Inline next to the date input it belongs to. */
+.issue-datetime-inline {
+  margin-left: 0.4em;
+  white-space: nowrap;
+}
+
+.issue-datetime-inline input[type="time"] {
+  width: auto;
+}
