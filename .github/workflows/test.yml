@@ -1,11 +1,10 @@
 name: Test
 
-# This repository is public, so Actions minutes are free: run on PRs and on the
-# post-merge push to main. workflow_dispatch lets the check be run on demand.
+# PRs only, not also the post-merge push, to conserve Actions minutes while this
+# repository is private. Add `push: branches: [main]` once it is public, where
+# Actions is free. workflow_dispatch lets the check be run on demand.
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
   workflow_dispatch:
 
