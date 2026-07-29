@@ -8,6 +8,12 @@
 (function () {
   'use strict';
 
+  // Marks that this script actually loaded. The stylesheet only hides the
+  // detached container when this class is present, so a failed or disabled
+  // script leaves the fields visible where they were rendered instead of
+  // hiding them forever.
+  document.documentElement.classList.add('issue-datetime-js');
+
   function snapToStep(input) {
     var step = parseInt(input.getAttribute('step'), 10);
     if (!step || !input.value) return;
@@ -15,7 +21,11 @@
     var parts = input.value.split(':');
     if (parts.length < 2) return;
 
-    var minutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    var hours = parseInt(parts[0], 10);
+    var mins = parseInt(parts[1], 10);
+    if (!isFinite(hours) || !isFinite(mins)) return;
+
+    var minutes = hours * 60 + mins;
     var stepMinutes = step / 60;
     if (!stepMinutes) return;
 
