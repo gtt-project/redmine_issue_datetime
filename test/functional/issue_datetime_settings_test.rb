@@ -16,7 +16,9 @@ class IssueDatetimeSettingsTest < Redmine::ControllerTest
     assert_response :success
     assert_select 'select[name=?]', 'settings[time_step]'
     assert_select 'select[name=?]', 'settings[reference_zone]'
-    assert_select 'input[name=?]', 'settings[tracker_ids][]'
+    # A checkbox per tracker, not just the hidden field that clears the list.
+    assert_select 'input[type=checkbox][name=?]', 'settings[tracker_ids][]',
+                  count: Tracker.count
   end
 
   test 'saving the plugin settings works' do
@@ -25,7 +27,7 @@ class IssueDatetimeSettingsTest < Redmine::ControllerTest
       settings: {'tracker_ids' => ['', '1'], 'time_step' => '30', 'reference_zone' => 'Tokyo'}
     }
 
-    assert_redirected_to '/settings/plugin/redmine_issue_datetime'
+    assert_redirected_to controller: 'settings', action: 'plugin', id: 'redmine_issue_datetime'
     assert RedmineIssueDatetime.enabled_for?(1)
     assert_not RedmineIssueDatetime.enabled_for?(2)
     assert_equal 30, RedmineIssueDatetime.time_step_minutes
