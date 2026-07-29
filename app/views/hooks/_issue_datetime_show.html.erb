@@ -1,0 +1,13 @@
+<% record = issue && RedmineIssueDatetime.enabled_for?(issue.tracker_id) ? issue.issue_datetime : nil %>
+<% if record && !record.blank_times? %>
+<div class="issue-datetime">
+  <span class="issue-datetime-start">
+    <strong><%= l(:field_start_time) %>:</strong>
+    <%= RedmineIssueDatetime.format_time_of_day(record.starts_at) || '-' %>
+  </span>
+  <span class="issue-datetime-due">
+    <strong><%= l(:field_due_time) %>:</strong>
+    <%= RedmineIssueDatetime.format_time_of_day(record.ends_at) || '-' %>
+  </span>
+</div>
+<% end %>

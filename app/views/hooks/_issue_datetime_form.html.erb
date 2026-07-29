@@ -1,0 +1,10 @@
+<% if issue && form && RedmineIssueDatetime.enabled_for?(issue.tracker_id) %>
+<div id="issue_datetime_attributes" class="splitcontent">
+  <div class="splitcontentleft">
+    <p><%= form.time_field :start_time, step: RedmineIssueDatetime.time_step_seconds, label: :field_start_time %></p>
+  </div>
+  <div class="splitcontentright">
+    <p><%= form.time_field :due_time, step: RedmineIssueDatetime.time_step_seconds, label: :field_due_time %></p>
+  </div>
+</div>
+<% end %>

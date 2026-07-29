@@ -1,0 +1,25 @@
+<p>
+  <label><%= l(:label_issue_datetime_trackers) %></label>
+  <%= hidden_field_tag 'settings[tracker_ids][]', '' %>
+  <% Tracker.sorted.each do |tracker| %>
+    <label class="block">
+      <%= check_box_tag 'settings[tracker_ids][]', tracker.id,
+                        RedmineIssueDatetime.enabled_for?(tracker.id) %>
+      <%= tracker.name %>
+    </label>
+  <% end %>
+</p>
+<p>
+  <label><%= l(:label_issue_datetime_step) %></label>
+  <%= select_tag 'settings[time_step]',
+                 options_for_select([5, 10, 15, 30, 60].map { |m| ["#{m} min", m.to_s] },
+                                    RedmineIssueDatetime.settings['time_step']) %>
+</p>
+<p>
+  <label><%= l(:label_issue_datetime_zone) %></label>
+  <%= select_tag 'settings[reference_zone]',
+                 options_for_select([[l(:label_issue_datetime_zone_default), '']] +
+                                      ActiveSupport::TimeZone.all.map { |z| [z.to_s, z.name] },
+                                    RedmineIssueDatetime.settings['reference_zone']) %>
+  <em class="info"><%= l(:text_issue_datetime_zone_hint) %></em>
+</p>
