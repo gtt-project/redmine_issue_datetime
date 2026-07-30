@@ -45,6 +45,18 @@ module RedmineIssueDatetime
       ActiveSupport::TimeZone['UTC']
   end
 
+  # Short name of the reference zone, for labelling times in the UI.
+  #
+  # Times are stored as instants and always shown on one clock, the instance's
+  # reference zone, rather than each viewer's own. For site-based work that is
+  # the useful choice: a dispatcher and someone at the site must mean the same
+  # wall-clock time by "09:15". The label is what keeps that unambiguous.
+  #
+  # Resolved at a given moment because the abbreviation is DST-dependent.
+  def self.zone_abbreviation(at = Time.current)
+    at.in_time_zone(reference_zone).strftime('%Z')
+  end
+
   def self.format_time_of_day(timestamp)
     timestamp && timestamp.in_time_zone(reference_zone).strftime('%H:%M')
   end

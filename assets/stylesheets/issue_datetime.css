@@ -30,3 +30,13 @@
   margin-left: 0.2em;
   font-weight: normal;
 }
+
+/* Names the clock the times are shown on. Times always use the instance
+   reference zone, not the viewer's, so this label is what makes them
+   unambiguous. */
+.issue-datetime-zone {
+  color: #666;
+  font-size: 0.85em;
+  margin-left: 0.3em;
+  white-space: nowrap;
+}

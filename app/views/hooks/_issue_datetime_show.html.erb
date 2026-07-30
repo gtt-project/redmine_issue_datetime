@@ -1,5 +1,10 @@
 <% record = issue && RedmineIssueDatetime.enabled_for?(issue.tracker_id) ? issue.issue_datetime : nil %>
 <% if record && !record.blank_times? %>
+<%#
+  The zone is named once here rather than on each value. Times are always shown
+  on the instance's reference clock, not the viewer's, so saying which clock it
+  is removes the ambiguity that would otherwise need a per-viewer conversion.
+%>
 <div class="issue-datetime">
   <span class="issue-datetime-start">
     <strong><%= l(:field_start_time) %>:</strong>
@@ -8,6 +13,9 @@
   <span class="issue-datetime-due">
     <strong><%= l(:field_due_time) %>:</strong>
     <%= RedmineIssueDatetime.format_time_of_day(record.ends_at) || '-' %>
+  </span>
+  <span class="issue-datetime-zone" title="<%= RedmineIssueDatetime.reference_zone.name %>">
+    (<%= RedmineIssueDatetime.zone_abbreviation(record.starts_at || record.ends_at) %>)
   </span>
 </div>
 <% end %>
