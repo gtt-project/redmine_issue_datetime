@@ -40,15 +40,32 @@ class ZoneLabelTest < ActiveSupport::TestCase
     enable_issue_datetime(@issue.tracker_id, zone: 'Tokyo')
     at = Time.utc(2026, 8, 3, 0, 15)
 
-    User.current = User.find(2)
-    User.current.pref.update(time_zone: 'UTC')
+    user = User.find(2)
+    original_zone = user.pref.time_zone
+    User.current = user
+    user.pref.update(time_zone: 'UTC')
     as_utc_user = RedmineIssueDatetime.format_time_of_day(at)
-    User.current.pref.update(time_zone: 'Tokyo')
+    user.pref.update(time_zone: 'Tokyo')
     as_tokyo_user = RedmineIssueDatetime.format_time_of_day(at)
 
     assert_equal '09:15', as_utc_user
     assert_equal as_utc_user, as_tokyo_user
   ensure
+    user&.pref&.update(time_zone: original_zone)
     User.current = nil
+  end
+
+  # zone_abbreviation has no default instant on purpose: "now" would be the wrong
+  # label whenever the thing on screen sits in another part of the year.
+  test 'zone_abbreviation requires an instant' do
+    assert_raises(ArgumentError) { RedmineIssueDatetime.zone_abbreviation }
+  end
+
+  # Anywhere covering many dates, or none yet, uses the zone name instead, since
+  # no single abbreviation could be correct for all of them.
+  test 'zone_name is stable regardless of the season' do
+    enable_issue_datetime(@issue.tracker_id, zone: 'Berlin')
+
+    assert_equal 'Berlin', RedmineIssueDatetime.zone_name
   end
 end

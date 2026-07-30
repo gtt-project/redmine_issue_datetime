@@ -52,9 +52,21 @@ module RedmineIssueDatetime
   # the useful choice: a dispatcher and someone at the site must mean the same
   # wall-clock time by "09:15". The label is what keeps that unambiguous.
   #
-  # Resolved at a given moment because the abbreviation is DST-dependent.
-  def self.zone_abbreviation(at = Time.current)
+  # Two labels, because the honest label depends on what is being labelled.
+  #
+  # zone_abbreviation needs an instant and has no default: the abbreviation is
+  # daylight-saving dependent, so "now" would be wrong whenever the thing on
+  # screen is in another part of the year. Use it only where a specific time is
+  # displayed.
+  #
+  # zone_name is for anywhere that covers many dates or none yet - a list header,
+  # an empty form - where no single abbreviation can be correct.
+  def self.zone_abbreviation(at)
     at.in_time_zone(reference_zone).strftime('%Z')
+  end
+
+  def self.zone_name
+    reference_zone.name
   end
 
   def self.format_time_of_day(timestamp)

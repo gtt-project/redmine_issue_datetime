@@ -1,21 +1,35 @@
 <% record = issue && RedmineIssueDatetime.enabled_for?(issue.tracker_id) ? issue.issue_datetime : nil %>
 <% if record && !record.blank_times? %>
-<%#
-  The zone is named once here rather than on each value. Times are always shown
-  on the instance's reference clock, not the viewer's, so saying which clock it
-  is removes the ambiguity that would otherwise need a per-viewer conversion.
-%>
-<div class="issue-datetime">
-  <span class="issue-datetime-start">
-    <strong><%= l(:field_start_time) %>:</strong>
-    <%= RedmineIssueDatetime.format_time_of_day(record.starts_at) || '-' %>
-  </span>
-  <span class="issue-datetime-due">
-    <strong><%= l(:field_due_time) %>:</strong>
-    <%= RedmineIssueDatetime.format_time_of_day(record.ends_at) || '-' %>
-  </span>
-  <span class="issue-datetime-zone" title="<%= RedmineIssueDatetime.reference_zone.name %>">
-    (<%= RedmineIssueDatetime.zone_abbreviation(record.starts_at || record.ends_at) %>)
-  </span>
-</div>
+  <%#
+    Times are always shown on the instance's reference clock, not the viewer's,
+    so the zone is named to remove the ambiguity. Here there ARE specific
+    instants, so the daylight-saving-aware abbreviation is used.
+
+    Start and due can fall under different abbreviations (an issue spanning a
+    DST change, or two times in different seasons), so label each time when they
+    differ and only once when they agree.
+  %>
+  <% starts_zone = record.starts_at && RedmineIssueDatetime.zone_abbreviation(record.starts_at) %>
+  <% ends_zone = record.ends_at && RedmineIssueDatetime.zone_abbreviation(record.ends_at) %>
+  <% shared_zone = starts_zone if starts_zone && (ends_zone.nil? || ends_zone == starts_zone) %>
+  <% shared_zone ||= ends_zone if starts_zone.nil? %>
+  <div class="issue-datetime" title="<%= RedmineIssueDatetime.zone_name %>">
+    <span class="issue-datetime-start">
+      <strong><%= l(:field_start_time) %>:</strong>
+      <%= RedmineIssueDatetime.format_time_of_day(record.starts_at) || '-' %>
+      <% if starts_zone && shared_zone.nil? %>
+        <span class="issue-datetime-zone">(<%= starts_zone %>)</span>
+      <% end %>
+    </span>
+    <span class="issue-datetime-due">
+      <strong><%= l(:field_due_time) %>:</strong>
+      <%= RedmineIssueDatetime.format_time_of_day(record.ends_at) || '-' %>
+      <% if ends_zone && shared_zone.nil? %>
+        <span class="issue-datetime-zone">(<%= ends_zone %>)</span>
+      <% end %>
+    </span>
+    <% if shared_zone %>
+      <span class="issue-datetime-zone">(<%= shared_zone %>)</span>
+    <% end %>
+  </div>
 <% end %>
