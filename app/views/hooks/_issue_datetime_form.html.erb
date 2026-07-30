@@ -16,7 +16,7 @@
                           label: '',
                           class: 'issue-datetime-time',
                           aria: {label: l(:field_start_time)},
-                          title: l(:field_start_time) %>
+                          title: "#{l(:field_start_time)} (#{RedmineIssueDatetime.reference_zone.name})" %>
     </span>
     <span class="issue-datetime-inline" data-issue-datetime-target="due_date_area">
       <%= form.time_field :due_time,
@@ -24,7 +24,8 @@
                           label: '',
                           class: 'issue-datetime-time',
                           aria: {label: l(:field_due_time)},
-                          title: l(:field_due_time) %>
+                          title: "#{l(:field_due_time)} (#{RedmineIssueDatetime.reference_zone.name})" %>
+      <span class="issue-datetime-zone"><%= RedmineIssueDatetime.zone_name %></span>
     </span>
     <span class="issue-datetime-allday" data-issue-datetime-target="due_date_area">
       <%= check_box_tag 'issue[all_day]', '1', issue.all_day,

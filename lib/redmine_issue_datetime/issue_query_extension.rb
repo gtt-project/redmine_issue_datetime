@@ -20,14 +20,21 @@ module RedmineIssueDatetime
       @issue_datetime_columns_added = true
       return columns unless RedmineIssueDatetime.any_tracker_enabled?
 
-      columns << QueryColumn.new(:start_time, caption: :field_start_time, inline: true)
-      columns << QueryColumn.new(:due_time, caption: :field_due_time, inline: true)
+      # Zone named in the header rather than repeated in every cell, and by name
+      # rather than abbreviation: a list spans many dates, so no single
+      # daylight-saving abbreviation would be correct for all of them.
+      columns << QueryColumn.new(:start_time, caption: -> { zoned_caption(:field_start_time) }, inline: true)
+      columns << QueryColumn.new(:due_time, caption: -> { zoned_caption(:field_due_time) }, inline: true)
       columns
     end
 
     # Redmine's own options[:include] is folded into the scope's `includes`, so
     # the association is loaded up front without this having to touch
     # ActiveRecord's Preloader directly.
+    def zoned_caption(key)
+      "#{::I18n.t(key)} (#{RedmineIssueDatetime.zone_name})"
+    end
+
     def issues(options = {})
       return super unless (column_names & COLUMN_NAMES).any?
 
