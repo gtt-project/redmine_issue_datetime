@@ -85,15 +85,18 @@ class DatetimeFormatTest < ActiveSupport::TestCase
   # Values are shown on one clock for everyone, so formatting must not follow the
   # viewer's own time zone the way Redmine's format_time helper would.
   test 'formatting does not follow the viewer time zone' do
+    # Captured before anything that can raise, so the ensure block always
+    # restores rather than assuming what the surrounding state was.
+    previous_user = User.current
     user = User.find(2)
-    original = user.pref.time_zone
+    original_zone = user.pref.time_zone
     User.current = user
     user.pref.update(time_zone: 'UTC')
 
     assert_includes @field.format.formatted_value(nil, @field, '2026-08-03T09:15'), '09:15'
   ensure
-    user&.pref&.update(time_zone: original)
-    User.current = nil
+    user&.pref&.update(time_zone: original_zone)
+    User.current = previous_user
   end
 
   test 'formatting a blank value yields an empty string, not an error' do

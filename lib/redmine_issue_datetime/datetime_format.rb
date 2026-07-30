@@ -12,6 +12,10 @@ module RedmineIssueDatetime
   # it keeps ISO strings sortable as plain strings so ordering needs no special
   # casing, and it is consistent with this plugin showing one clock for everyone
   # rather than converting per viewer.
+  # Named DatetimeFormat in datetime_format.rb on purpose: Redmine adds every
+  # plugin's lib/ as an eager-load path, so Zeitwerk derives the constant from
+  # the filename. A mismatch here passes every test (test and development load
+  # lazily) and then kills a production boot with a NameError.
   class DatetimeFormat < Redmine::FieldFormat::Unbounded
     add 'datetime'
     self.form_partial = 'custom_fields/formats/datetime'
