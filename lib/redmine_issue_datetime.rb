@@ -1,4 +1,5 @@
 require_relative 'redmine_issue_datetime/drift_check'
+require_relative 'redmine_issue_datetime/datetime_format'
 require_relative 'redmine_issue_datetime/issue_extension'
 require_relative 'redmine_issue_datetime/issue_query_extension'
 require_relative 'redmine_issue_datetime/hooks'

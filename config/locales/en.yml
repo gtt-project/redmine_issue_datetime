@@ -2,6 +2,8 @@ en:
   field_start_time: Start time
   field_due_time: Due time
   field_all_day: All day
+  label_datetime: Date and time
+  text_datetime_cf_zone_hint: "Values are entered and shown in %{zone}, the reference time zone configured for this plugin."
   label_issue_datetime_trackers: Enabled for trackers
   label_issue_datetime_step: Time input step
   label_issue_datetime_zone: Reference time zone
