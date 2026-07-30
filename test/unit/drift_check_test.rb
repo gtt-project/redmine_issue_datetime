@@ -45,6 +45,27 @@ class DriftCheckTest < ActiveSupport::TestCase
     assert_equal %w[due start], Check.new.findings.map(&:field).sort
   end
 
+  # The scan is batched by primary key (find_each ignores an order clause), so
+  # the ordering is applied to the findings themselves. Pinned because the output
+  # is read by a human or diffed by a monitor.
+  test 'findings are ordered by issue then field' do
+    # Issue 3 shares issue 1's tracker; a tracker the plugin is not enabled for
+    # would ignore the time and store nothing to drift.
+    other = Issue.find(3)
+    assert_equal @issue.tracker_id, other.tracker_id
+    # Its fixture due date precedes the new start date, which Redmine's own
+    # validation rejects, so clear it: only the start half matters here.
+    other.update!(start_date: Date.new(2026, 8, 3), due_date: nil, start_time: '08:00')
+    other.reload.update_column(:start_date, Date.new(2026, 9, 9))
+    drift_date!(:start_date, Date.new(2026, 8, 10))
+    drift_date!(:due_date, Date.new(2026, 8, 11))
+
+    findings = Check.new.findings
+
+    assert_equal [[@issue.id, 'due'], [@issue.id, 'start'], [other.id, 'start']],
+                 findings.map { |f| [f.issue_id, f.field] }
+  end
+
   test 'a stored time whose date was cleared is reported as an orphan' do
     drift_date!(:start_date, nil)
 

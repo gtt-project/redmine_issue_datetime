@@ -28,11 +28,17 @@ module RedmineIssueDatetime
       @zone = zone
     end
 
-    # Every disagreement, oldest issue first. Reads in batches so a large
-    # instance does not load every row at once.
+    # Every disagreement, ordered by issue then field.
+    #
+    # The scan is batched so a large instance never loads every row at once, and
+    # deliberately unordered: find_each batches by primary key and silently
+    # ignores an order clause (raising outright when
+    # ActiveRecord.error_on_ignored_order is set). The findings are the problems,
+    # so there are few of them, and sorting those at the end is both cheap and
+    # actually honoured.
     def findings
       results = []
-      IssueDatetime.includes(:issue).order(:issue_id).find_each(batch_size: 500) do |record|
+      IssueDatetime.includes(:issue).find_each(batch_size: 500) do |record|
         # A foreign key makes an orphaned row impossible in practice; the guard
         # is here so a database whose constraint was dropped degrades to skipping
         # the row rather than raising mid-scan.
@@ -44,7 +50,7 @@ module RedmineIssueDatetime
           results << finding if finding
         end
       end
-      results
+      results.sort_by { |finding| [finding.issue_id, finding.field] }
     end
 
     # Repairs by re-deriving the core date from the stored timestamp, because the
