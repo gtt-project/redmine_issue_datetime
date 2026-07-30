@@ -25,14 +25,13 @@ module RedmineIssueDatetime
       columns
     end
 
+    # Redmine's own options[:include] is folded into the scope's `includes`, so
+    # the association is loaded up front without this having to touch
+    # ActiveRecord's Preloader directly.
     def issues(options = {})
-      scope = super
-      return scope unless (column_names & COLUMN_NAMES).any?
+      return super unless (column_names & COLUMN_NAMES).any?
 
-      ActiveRecord::Associations::Preloader.new(
-        records: scope, associations: [:issue_datetime]
-      ).call
-      scope
+      super(options.merge(include: Array(options[:include]) + [:issue_datetime]))
     end
   end
 end

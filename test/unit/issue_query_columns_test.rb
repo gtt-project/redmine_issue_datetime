@@ -13,6 +13,10 @@ class IssueQueryColumnsTest < ActiveSupport::TestCase
     enable_issue_datetime(@issue.tracker_id)
   end
 
+  def teardown
+    User.current = nil
+  end
+
   def column_names_of(query)
     query.available_columns.map(&:name)
   end
