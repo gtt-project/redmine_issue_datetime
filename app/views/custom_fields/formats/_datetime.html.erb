@@ -1,0 +1,11 @@
+<p>
+  <%= f.text_field :default_value, size: 20,
+                   type: 'datetime-local',
+                   step: RedmineIssueDatetime.time_step_seconds %>
+</p>
+<p>
+  <em class="info">
+    <%= l(:text_datetime_cf_zone_hint, zone: RedmineIssueDatetime.zone_name) %>
+  </em>
+</p>
+<p><%= f.text_field :url_pattern, size: 50, label: :label_link_values_to %></p>
