@@ -11,7 +11,7 @@ module RedmineIssueDatetime
     included do
       has_one :issue_datetime, dependent: :destroy
 
-      safe_attributes 'start_time', 'due_time',
+      safe_attributes 'start_time', 'due_time', 'all_day',
                       if: ->(issue, _user) { RedmineIssueDatetime.enabled_for?(issue.tracker_id) }
 
       before_save :prepare_issue_datetime_sync
@@ -26,6 +26,21 @@ module RedmineIssueDatetime
       @due_time_input = value
     end
 
+    # "All day" is the absence of times rather than a stored flag, so the setter
+    # is sugar for clearing both. It is applied after the time setters regardless
+    # of parameter order, so ticking the box always wins over whatever the
+    # (disabled, and therefore possibly stale) time inputs submitted.
+    def all_day=(value)
+      @all_day_input = ActiveRecord::Type::Boolean.new.cast(value)
+    end
+
+    def all_day
+      return @all_day_input unless @all_day_input.nil?
+
+      issue_datetime.nil? || issue_datetime.blank_times?
+    end
+    alias all_day? all_day
+
     def start_time
       @start_time_input || RedmineIssueDatetime.format_time_of_day(issue_datetime&.starts_at)
     end
@@ -39,6 +54,13 @@ module RedmineIssueDatetime
     def prepare_issue_datetime_sync
       @issue_datetime_pending = nil
       return true unless RedmineIssueDatetime.enabled_for?(tracker_id)
+
+      # Ticking "all day" clears both times whatever the (disabled) time inputs
+      # submitted, so it cannot be defeated by a stale value in the form.
+      if @all_day_input
+        @start_time_input = ''
+        @due_time_input = ''
+      end
 
       record = issue_datetime
       return true if record.nil? && @start_time_input.blank? && @due_time_input.blank?
@@ -69,6 +91,7 @@ module RedmineIssueDatetime
       @issue_datetime_pending = nil
       @start_time_input = nil
       @due_time_input = nil
+      @all_day_input = nil
       return if pending.nil?
 
       record = issue_datetime || build_issue_datetime

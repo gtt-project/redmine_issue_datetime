@@ -41,16 +41,13 @@
     if (value !== input.value) input.value = value;
   }
 
+  // Moves each wrapper (control plus its label, if any) into the date row it
+  // names, so nothing is orphaned behind in the detached container.
   function relocate(container) {
-    var fields = container.querySelectorAll('[data-issue-datetime-target]');
-    Array.prototype.forEach.call(fields, function (field) {
-      var target = document.getElementById(field.dataset.issueDatetimeTarget);
-      if (!target) return;
-
-      var wrapper = document.createElement('span');
-      wrapper.className = 'issue-datetime-inline';
-      wrapper.appendChild(field);
-      target.appendChild(wrapper);
+    var groups = container.querySelectorAll('[data-issue-datetime-target]');
+    Array.prototype.forEach.call(groups, function (group) {
+      var target = document.getElementById(group.dataset.issueDatetimeTarget);
+      if (target) target.appendChild(group);
     });
     // Whatever could not be relocated stays visible in place.
     if (!container.querySelector('[data-issue-datetime-target]')) {
@@ -60,6 +57,41 @@
     }
   }
 
+  // "All day" means "no times", so ticking it empties and disables the time
+  // inputs rather than storing a flag of its own. Disabled inputs submit
+  // nothing, and the server clears the times when the box is ticked, so the two
+  // agree even if this script never runs.
+  function applyAllDay(checkbox, times, clearValues) {
+    times.forEach(function (input) {
+      if (checkbox.checked && clearValues) input.value = '';
+      input.disabled = checkbox.checked;
+    });
+  }
+
+  function wireAllDay() {
+    var checkbox = document.querySelector('input.issue-datetime-all-day');
+    if (!checkbox) return;
+
+    var times = Array.prototype.slice.call(
+      document.querySelectorAll('input.issue-datetime-time')
+    );
+    // On load, reflect the current state without wiping times the issue already
+    // has: an unticked box must not clear anything.
+    applyAllDay(checkbox, times, false);
+    checkbox.addEventListener('change', function () {
+      applyAllDay(checkbox, times, true);
+    });
+    // Entering a time is an implicit "not all day".
+    times.forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (input.value && checkbox.checked) {
+          checkbox.checked = false;
+          applyAllDay(checkbox, times, false);
+        }
+      });
+    });
+  }
+
   function init() {
     var container = document.getElementById('issue-datetime-fields');
     if (container) relocate(container);
@@ -67,6 +99,7 @@
     document.querySelectorAll('input.issue-datetime-time').forEach(function (input) {
       input.addEventListener('change', function () { snapToStep(input); });
     });
+    wireAllDay();
   }
 
   if (document.readyState === 'loading') {

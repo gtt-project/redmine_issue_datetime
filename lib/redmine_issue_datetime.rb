@@ -1,4 +1,5 @@
 require_relative 'redmine_issue_datetime/issue_extension'
+require_relative 'redmine_issue_datetime/issue_query_extension'
 require_relative 'redmine_issue_datetime/hooks'
 
 module RedmineIssueDatetime
@@ -6,6 +7,14 @@ module RedmineIssueDatetime
 
   def self.setup
     Issue.include(IssueExtension) unless Issue.include?(IssueExtension)
+    IssueQuery.prepend(IssueQueryExtension) unless IssueQuery.include?(IssueQueryExtension)
+  end
+
+  # Whether the plugin is switched on for any tracker at all. Used to keep the
+  # optional list columns out of the column picker on an instance that has not
+  # enabled the plugin anywhere.
+  def self.any_tracker_enabled?
+    Array(settings['tracker_ids']).reject(&:blank?).any?
   end
 
   def self.settings

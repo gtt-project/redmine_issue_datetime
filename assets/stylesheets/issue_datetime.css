@@ -15,3 +15,18 @@
 .issue-datetime-inline input[type="time"] {
   width: auto;
 }
+
+/* "All day" sits after the due time on the same row. */
+.issue-datetime-allday {
+  margin-left: 0.6em;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.issue-datetime-allday label {
+  display: inline;
+  float: none;
+  width: auto;
+  margin-left: 0.2em;
+  font-weight: normal;
+}
