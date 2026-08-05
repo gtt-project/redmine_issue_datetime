@@ -116,7 +116,10 @@ class IssueDatetimesController < ApplicationController
   end
 
   def render_parse_error(param)
-    render json: {errors: ["#{param} must be an ISO 8601 timestamp"]}, status: :unprocessable_entity
+    render json: {
+      errors: ["#{param} must be an ISO 8601 timestamp with a UTC offset, " \
+               'for example 2026-08-03T09:15:00+09:00 or 2026-08-03T00:15:00Z']
+    }, status: :unprocessable_entity
   end
 
   def issue_payload(issue)
