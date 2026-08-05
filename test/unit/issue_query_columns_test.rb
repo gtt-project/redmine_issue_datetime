@@ -83,6 +83,29 @@ class IssueQueryColumnsTest < ActiveSupport::TestCase
     assert issues.none? { |i| i.association(:issue_datetime).loaded? }
   end
 
+  # column_names is nil for a query on default columns - the normal state, see
+  # Query#has_default_columns? - and must not crash the issues override (#22).
+  test 'a query on default columns runs without error' do
+    query = IssueQuery.new(project: @issue.project)
+    assert_nil query.column_names
+
+    assert query.issues.any?
+  end
+
+  test 'time columns in the instance default columns still preload' do
+    # column_names stays nil, but the effective columns include start_time, so
+    # the sidecar preload must kick in for the rendered list.
+    with_settings issue_list_default_columns: %w[subject start_time] do
+      query = IssueQuery.new(project: @issue.project)
+      assert_nil query.column_names
+
+      issues = query.issues
+
+      assert issues.any?
+      assert issues.all? { |i| i.association(:issue_datetime).loaded? }
+    end
+  end
+
   test 'the columns are not sortable, rather than sorting by nothing' do
     query = IssueQuery.new
     start_time = query.available_columns.detect { |c| c.name == :start_time }
