@@ -16,17 +16,23 @@ module RedmineIssueDatetime
   # optional list columns out of the column picker on an instance that has not
   # enabled the plugin anywhere.
   def self.any_tracker_enabled?
-    Array(settings['tracker_ids']).reject(&:blank?).any?
+    enabled_tracker_ids.any?
   end
 
   def self.settings
     Setting.plugin_redmine_issue_datetime
   end
 
+  # The tracker ids the plugin is enabled for. The setting is stored as an
+  # array of strings and contains a blank entry from the form's hidden field.
+  def self.enabled_tracker_ids
+    Array(settings['tracker_ids']).reject(&:blank?).map(&:to_i)
+  end
+
   def self.enabled_for?(tracker_id)
     return false if tracker_id.blank?
 
-    Array(settings['tracker_ids']).reject(&:blank?).map(&:to_i).include?(tracker_id.to_i)
+    enabled_tracker_ids.include?(tracker_id.to_i)
   end
 
   def self.time_step_minutes
@@ -46,22 +52,20 @@ module RedmineIssueDatetime
       ActiveSupport::TimeZone['UTC']
   end
 
-  # Short name of the reference zone, for labelling times in the UI.
+  # Zone labels for the UI.
   #
-  # Times are stored as instants and always shown on one clock, the instance's
-  # reference zone, rather than each viewer's own. For site-based work that is
-  # the useful choice: a dispatcher and someone at the site must mean the same
-  # wall-clock time by "09:15". The label is what keeps that unambiguous.
+  # Times are always shown on one clock, the instance's reference zone, never
+  # converted to each viewer's own zone. For work that happens at a physical
+  # place, everyone must mean the same wall-clock time by "09:15", and the
+  # visible zone label is what makes that unambiguous.
   #
-  # Two labels, because the honest label depends on what is being labelled.
+  # There are two label methods because the correct label depends on context:
   #
-  # zone_abbreviation needs an instant and has no default: the abbreviation is
-  # daylight-saving dependent, so "now" would be wrong whenever the thing on
-  # screen is in another part of the year. Use it only where a specific time is
-  # displayed.
-  #
-  # zone_name is for anywhere that covers many dates or none yet - a list header,
-  # an empty form - where no single abbreviation can be correct.
+  # - zone_abbreviation(at) is daylight-saving aware, so it requires the
+  #   instant being displayed (deliberately no default: "now" would be wrong
+  #   for a time in another part of the year). Use it next to a specific time.
+  # - zone_name is season-independent. Use it where many dates are covered,
+  #   or none yet: list headers, empty forms.
   def self.zone_abbreviation(at)
     at.in_time_zone(reference_zone).strftime('%Z')
   end

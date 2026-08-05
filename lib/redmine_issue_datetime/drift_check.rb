@@ -30,12 +30,11 @@ module RedmineIssueDatetime
 
     # Every disagreement, ordered by issue then field.
     #
-    # The scan is batched so a large instance never loads every row at once, and
-    # deliberately unordered: find_each batches by primary key and silently
-    # ignores an order clause (raising outright when
-    # ActiveRecord.error_on_ignored_order is set). The findings are the problems,
-    # so there are few of them, and sorting those at the end is both cheap and
-    # actually honoured.
+    # The scan is batched so a large instance never loads every row at once.
+    # It is deliberately unordered: find_each batches by primary key and
+    # silently ignores an order clause (or raises when
+    # ActiveRecord.error_on_ignored_order is set). Sorting the few findings
+    # at the end is cheap and, unlike an order clause here, actually applied.
     def findings
       results = []
       IssueDatetime.includes(:issue).find_each(batch_size: 500) do |record|
