@@ -1,6 +1,6 @@
 # redmine_issue_datetime: Design Document
 
-Status: Draft for review
+Status: As built (kept in step with the implementation)
 Scope: Standalone Redmine plugin adding time of day to issue start and due dates
 
 ## 1. Problem
@@ -61,10 +61,14 @@ Rules:
   default for every existing and new issue.
 - `starts_at` / `ends_at` may each be null independently (time set only on
   one side).
-- Times are stored in UTC and rendered in the user's Redmine time zone
-  preference. Since core dates are zone-naive, the mirror into
-  `start_date` / `due_date` uses a per-instance reference zone (plugin
-  setting, default: the application default time zone).
+- Times are stored in UTC but always entered and displayed in one
+  per-instance reference zone (plugin setting, default: the application
+  default time zone), with a visible zone label. They are deliberately
+  not converted to each viewer's personal time zone: for work that
+  happens at a physical place, everyone must mean the same wall-clock
+  time by "09:15". The same reference zone anchors the date mirror into
+  `start_date` / `due_date`, so the date a user sees always matches the
+  time they typed.
 - Duration is intentionally not stored here. Redmine's existing
   `estimated_hours` already expresses effort/service duration and stays
   the single source for that.
@@ -76,8 +80,12 @@ Rules:
 - Setting a time creates or updates the sidecar row and mirrors the date
   part into the core column in the same save.
 - Changing only the core date (via stock UI, bulk edit, or API) keeps the
-  time of day and shifts the timestamp to the new date. The sync runs in an
-  `after_save` patch on `Issue` (module prepend, no alias chaining).
+  time of day and shifts the timestamp to the new date. The sync is an
+  `ActiveSupport::Concern` included into `Issue` and runs in two steps:
+  the new timestamps are computed and journalized in `before_save`
+  (journal details must exist before core's own `create_journal`
+  after_save callback writes the journal), and persisted to the sidecar
+  row in `after_save`.
 - Clearing the date clears the corresponding timestamp.
 - Clearing the time (back to "all day") deletes or nulls the sidecar value;
   the core date stays.
@@ -89,8 +97,11 @@ keys), so issue history reflects them like any other field change.
 
 ### Copy / move
 
-Issue copy duplicates the sidecar row. This must be explicit
-(`after copy` hook); it does not come for free.
+Issue copy duplicates the times: the copy keeps the same times of day,
+re-anchored on its (possibly changed) dates. This is explicit in the
+sync callback (a copied issue inherits the original's sidecar row as its
+source); it does not come for free from Redmine's copy, which only
+carries attributes.
 
 ### Parent/child
 
@@ -157,10 +168,12 @@ code updates dates without going through ActiveRecord callbacks (raw SQL,
 ## 9. Testing
 
 - Model tests for the mirror invariant in both directions, null handling,
-  time zone edges (date boundary around midnight in non-UTC zones).
-- Controller tests for the API endpoints and permissions.
-- Integration test for form submit through the hook.
-- Target matrix: current Redmine 6.x and RedMica, PostgreSQL and MySQL.
+  time zone edges (date boundary around midnight in non-UTC zones), issue
+  copy, and the drift check/repair.
+- API tests for the endpoints, parsing rules, and permissions (including
+  the note-only-permission case, which must not be allowed to write).
+- CI matrix: Redmine 6.1 (Ruby 3.4) and 7.0 (Ruby 3.4 and 4.0) on
+  PostgreSQL, plus a `zeitwerk:check` eager-loading gate.
 
 ## 10. Delivery
 
