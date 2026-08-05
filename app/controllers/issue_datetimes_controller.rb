@@ -12,24 +12,10 @@ class IssueDatetimesController < ApplicationController
   # A timestamp sets both the core date and the time of day; null clears
   # the time of day and keeps the date. Omitted keys are left untouched.
   def update
-    zone = RedmineIssueDatetime.reference_zone
     @issue.init_journal(User.current)
 
-    [[:starts_at, :start_date, :start_time=], [:ends_at, :due_date, :due_time=]].each do |param, date_attr, time_writer|
-      next unless params.key?(param)
-
-      value = params[param]
-      if value.present?
-        timestamp = parse_timestamp(value)
-        return render_parse_error(param) if timestamp.nil?
-
-        local = timestamp.in_time_zone(zone)
-        @issue.send(:"#{date_attr}=", local.to_date)
-        @issue.send(time_writer, local.strftime('%H:%M'))
-      else
-        @issue.send(time_writer, '')
-      end
-    end
+    return unless apply_time_param(:starts_at, :start_date=, :start_time=)
+    return unless apply_time_param(:ends_at, :due_date=, :due_time=)
 
     if @issue.save
       render json: issue_payload(@issue.reload)
@@ -81,14 +67,41 @@ class IssueDatetimesController < ApplicationController
     render_404
   end
 
+  # attributes_editable?, not editable?: this endpoint changes issue
+  # attributes (dates and times). editable? is also true for users who may
+  # only add notes, and those must not be able to change dates here.
   def require_edit_permission
-    return render_403 unless @issue.editable?
+    return render_403 unless @issue.attributes_editable?
   end
 
   def find_project
     @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
     render_404
+  end
+
+  # Applies one side (start or due) of the request payload to the issue.
+  # Returns false when the value could not be parsed; the error response
+  # has been rendered in that case and the caller must stop.
+  def apply_time_param(param, date_writer, time_writer)
+    return true unless params.key?(param)
+
+    value = params[param]
+    if value.blank?
+      @issue.public_send(time_writer, '')
+      return true
+    end
+
+    timestamp = parse_timestamp(value)
+    if timestamp.nil?
+      render_parse_error(param)
+      return false
+    end
+
+    local = timestamp.in_time_zone(RedmineIssueDatetime.reference_zone)
+    @issue.public_send(date_writer, local.to_date)
+    @issue.public_send(time_writer, local.strftime('%H:%M'))
+    true
   end
 
   # Requires an explicit offset (Z or +hh:mm) so API writes are
