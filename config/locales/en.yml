@@ -1,4 +1,9 @@
 en:
+  activerecord:
+    attributes:
+      issue_datetime:
+        starts_at: Start time
+        ends_at: Due time
   field_start_time: Start time
   field_due_time: Due time
   field_all_day: All day
@@ -6,6 +11,7 @@ en:
   text_datetime_cf_zone_hint: "Values are entered and shown in %{zone}, the reference time zone configured for this plugin."
   label_issue_datetime_trackers: Enabled for trackers
   label_issue_datetime_step: Time input step
+  label_issue_datetime_step_minutes: "%{count} min"
   label_issue_datetime_zone: Reference time zone
   label_issue_datetime_zone_default: Application default
   text_issue_datetime_zone_hint: Used to derive the date part mirrored into the start and due date fields.

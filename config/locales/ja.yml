@@ -1,4 +1,9 @@
 ja:
+  activerecord:
+    attributes:
+      issue_datetime:
+        starts_at: 開始時刻
+        ends_at: 期日時刻
   field_start_time: 開始時刻
   field_due_time: 期日時刻
   field_all_day: 終日
@@ -6,6 +11,7 @@ ja:
   text_datetime_cf_zone_hint: "値はこのプラグインで設定した基準タイムゾーン %{zone} で入力・表示されます。"
   label_issue_datetime_trackers: 有効にするトラッカー
   label_issue_datetime_step: 時刻入力の間隔
+  label_issue_datetime_step_minutes: "%{count}分"
   label_issue_datetime_zone: 基準タイムゾーン
   label_issue_datetime_zone_default: アプリケーションのデフォルト
   text_issue_datetime_zone_hint: 開始日・期日に反映する日付の算出に使用します。

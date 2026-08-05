@@ -12,8 +12,10 @@
 <p>
   <label><%= l(:label_issue_datetime_step) %></label>
   <%= select_tag 'settings[time_step]',
-                 options_for_select([5, 10, 15, 30, 60].map { |m| ["#{m} min", m.to_s] },
-                                    RedmineIssueDatetime.settings['time_step']) %>
+                 options_for_select(
+                   [5, 10, 15, 30, 60].map { |m| [l(:label_issue_datetime_step_minutes, count: m), m.to_s] },
+                   RedmineIssueDatetime.settings['time_step']
+                 ) %>
 </p>
 <p>
   <label><%= l(:label_issue_datetime_zone) %></label>

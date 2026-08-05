@@ -87,6 +87,24 @@ class IssueDatetimesApiTest < Redmine::ApiTest::Base
     assert_equal [@issue.id], rows.map { |r| r['issue_id'] }
   end
 
+  # editable? is also true for users who may only add notes; writing dates
+  # and times is attribute editing and must require attributes_editable?.
+  test 'a user who can only add notes cannot change times' do
+    role = Role.find(1)
+    role.remove_permission!(:edit_issues, :edit_own_issues)
+    role.add_permission!(:add_notes)
+    user = User.find(2)
+    assert @issue.editable?(user), 'setup: the user should still pass editable?'
+    assert_not @issue.attributes_editable?(user)
+
+    put "/issues/#{@issue.id}/datetime.json",
+        params: {starts_at: '2026-08-03T09:15:00Z'}.to_json,
+        headers: {'Content-Type' => 'application/json'}.merge(credentials('jsmith'))
+
+    assert_response :forbidden
+    assert_nil @issue.reload.issue_datetime
+  end
+
   test 'anonymous users cannot write when login is required' do
     with_settings login_required: '1' do
       put "/issues/#{@issue.id}/datetime.json",
