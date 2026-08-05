@@ -26,10 +26,10 @@ module RedmineIssueDatetime
       @due_time_input = value
     end
 
-    # "All day" is the absence of times rather than a stored flag, so the setter
-    # is sugar for clearing both. It is applied after the time setters regardless
-    # of parameter order, so ticking the box always wins over whatever the
-    # (disabled, and therefore possibly stale) time inputs submitted.
+    # "All day" means "no times"; there is no stored flag. Setting it to
+    # true clears both times. The flag is applied during the save, not
+    # here, so it wins regardless of the order the attributes were
+    # assigned in.
     def all_day=(value)
       @all_day_input = ActiveRecord::Type::Boolean.new.cast(value)
     end
@@ -53,24 +53,29 @@ module RedmineIssueDatetime
 
     def prepare_issue_datetime_sync
       @issue_datetime_pending = nil
-      return true unless RedmineIssueDatetime.enabled_for?(tracker_id)
+      return unless RedmineIssueDatetime.enabled_for?(tracker_id)
 
-      # Ticking "all day" clears both times whatever the (disabled) time inputs
-      # submitted, so it cannot be defeated by a stale value in the form.
+      # Ticking "all day" clears both times, even if the (disabled) time
+      # inputs still submitted stale values.
       if @all_day_input
         @start_time_input = ''
         @due_time_input = ''
       end
 
-      record = issue_datetime
-      return true if record.nil? && @start_time_input.blank? && @due_time_input.blank?
+      # A copied issue has no sidecar row of its own yet, so use the
+      # original's row as the source. This is what makes a copy keep its
+      # times. Core exposes the original only as the @copied_from ivar
+      # (its public API is just copy?).
+      source = issue_datetime
+      source ||= @copied_from.issue_datetime if new_record? && copy?
+      return if source.nil? && @start_time_input.blank? && @due_time_input.blank?
 
       touched = !@start_time_input.nil? || !@due_time_input.nil? ||
                 will_save_change_to_start_date? || will_save_change_to_due_date?
-      return true unless touched
+      return unless touched
 
-      old_starts = record&.starts_at
-      old_ends = record&.ends_at
+      old_starts = source&.starts_at
+      old_ends = source&.ends_at
       new_starts = RedmineIssueDatetime.combine(start_date, @start_time_input, old_starts)
       new_ends = RedmineIssueDatetime.combine(due_date, @due_time_input, old_ends)
 
@@ -83,7 +88,6 @@ module RedmineIssueDatetime
       journalize_issue_datetime('due_time', old_ends, new_ends)
 
       @issue_datetime_pending = {starts_at: new_starts, ends_at: new_ends}
-      true
     end
 
     def persist_issue_datetime
