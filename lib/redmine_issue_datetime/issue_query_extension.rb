@@ -36,7 +36,11 @@ module RedmineIssueDatetime
     end
 
     def issues(options = {})
-      return super unless (column_names & COLUMN_NAMES).any?
+      # Check the EFFECTIVE columns (Query#columns), not the raw column_names
+      # attribute: column_names is nil for a query on default columns - the
+      # normal state, see Query#has_default_columns? - and the instance-wide
+      # default column setting may itself include the time columns.
+      return super if (columns.map(&:name) & COLUMN_NAMES).none?
 
       super(options.merge(include: Array(options[:include]) + [:issue_datetime]))
     end
